@@ -1,7 +1,4 @@
 <script setup>
-import { RouterLink, RouterView } from "vue-router";
-import HelloWorld from "./components/HelloWorld.vue";
-
 import { onMounted, ref } from "vue";
 import Account from "./components/Account.vue";
 import Auth from "./components/Auth.vue";
@@ -36,11 +33,6 @@ onMounted(() => {
 					<Account v-if="session" :session="session" />
 					<Auth v-else />
 				</div>
-
-				<nav>
-					<RouterLink to="/">Home</RouterLink>
-					<RouterLink to="/about">About</RouterLink>
-				</nav>
 			</div>
 		</header>
 
