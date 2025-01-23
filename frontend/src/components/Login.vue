@@ -1,25 +1,3 @@
-<script setup>
-import { ref } from "vue";
-import { supabase } from "../supabase";
-
-const email = ref("");
-const password = ref("");
-const error = ref(null);
-
-const login = async () => {
-	const { user, error: loginError } = await supabase.auth.signInWithPassword({
-		email: email.value,
-		password: password.value,
-	});
-
-	if (loginError) {
-		error.value = loginError.message;
-	} else {
-		console.log("Logged in as:", user.email);
-	}
-};
-</script>
-
 <template>
 	<div>
 		<form @submit.prevent="login">
@@ -35,3 +13,27 @@ const login = async () => {
 		<p v-if="error">{{ error }}</p>
 	</div>
 </template>
+
+<script setup>
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import axios from "axios";
+const email = ref("");
+const password = ref("");
+const error = ref(null);
+const router = useRouter();
+
+const login = async () => {
+	try {
+		const response = await axios.post("http://127.0.0.1:8000/api/login", {
+			email: email.value,
+			password: password.value,
+		});
+		const { access_token } = response.data;
+		localStorage.setItem("authToken", access_token);
+		router.push("/dashboard");
+	} catch (err) {
+		error.value = err.response?.data?.detail || "An error occurred";
+	}
+};
+</script>

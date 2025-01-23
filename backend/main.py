@@ -53,3 +53,34 @@ def verify_token(token: str):
 @app.get("/")
 async def root():
     return {"message": "Welcome to the API"}
+
+@app.post("/api/login", response_model=Token)
+async def login(data: LoginRequest):
+    # Authenticate with Supabase
+    auth_response = supabase.auth.sign_in_with_password({
+        "email": data.email,
+        "password": data.password
+    })
+
+    if "error" in auth_response:
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    user = auth_response.get("user")
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid user")
+
+    # Generate a JWT
+    access_token = create_access_token(data={"sub": user["id"]}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    return {"access_token": access_token, "token_type": "bearer"}
+
+
+@app.get("/api/account")
+async def get_account(authorization: str = Header(None)):
+    token = authorization.split(" ")[1] if authorization else None
+    user_id = verify_token(token)
+
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+    # Example: fetch account data (replace with real data fetching logic)
+    return {"user_id": user_id, "account_balance": 1000.0}

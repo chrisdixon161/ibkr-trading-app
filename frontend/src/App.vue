@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, ref } from "vue";
-import Account from "./components/Account.vue";
+import Dashboard from "./components/Dashboard.vue";
 import Login from "./components/Login.vue";
 import { supabase } from "./supabase";
 
@@ -21,12 +21,12 @@ onMounted(() => {
 	<div>
 		<header>
 			<div class="wrapper">
-				<Account v-if="session" :session="session" />
+				<Dashboard v-if="session" :session="session" />
 				<Login v-else />
 			</div>
 		</header>
 
-		<RouterView />
+		<!-- <RouterView /> -->
 	</div>
 </template>
 
