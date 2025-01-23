@@ -112,7 +112,6 @@ async def get_account(authorization: str = Header(None)):
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
 
-    # Example: fetch account data (replace with real data fetching logic)
-    return {"user_id": user_id, "account_balance": 1000.0}
+    return {"user_id": user_id}
 
 
