@@ -1,23 +1,26 @@
 <template>
 	<div>
+		<h1>Login</h1>
 		<form @submit.prevent="login">
-			<input v-model="email" type="email" placeholder="Email" required />
-			<input
-				v-model="password"
-				type="password"
-				placeholder="Password"
-				required
-			/>
+			<div>
+				<label>Email:</label>
+				<input v-model="email" type="email" required />
+			</div>
+			<div>
+				<label>Password:</label>
+				<input v-model="password" type="password" required />
+			</div>
 			<button type="submit">Login</button>
 		</form>
-		<p v-if="error">{{ error }}</p>
+		<p v-if="error" style="color: red">{{ error }}</p>
 	</div>
 </template>
 
 <script setup>
 import { ref } from "vue";
-import { useRouter } from "vue-router";
 import axios from "axios";
+import { useRouter } from "vue-router";
+
 const email = ref("");
 const password = ref("");
 const error = ref(null);
@@ -29,11 +32,16 @@ const login = async () => {
 			email: email.value,
 			password: password.value,
 		});
+
+		// Handle successful login
 		const { access_token } = response.data;
 		localStorage.setItem("authToken", access_token);
 		router.push("/dashboard");
 	} catch (err) {
-		error.value = err.response?.data?.detail || "An error occurred";
+		// Log and display the error
+		console.error("Login error:", err.response?.data || err);
+		error.value =
+			err.response?.data?.detail || "An error occurred during login.";
 	}
 };
 </script>
