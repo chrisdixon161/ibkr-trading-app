@@ -33,7 +33,6 @@ const login = async () => {
 			password: password.value,
 		});
 
-		// Handle successful login
 		const { access_token } = response.data;
 		localStorage.setItem("authToken", access_token);
 		router.push("/dashboard");

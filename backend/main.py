@@ -104,14 +104,3 @@ async def login(data: LoginRequest):
 
 
 
-@app.get("/api/account")
-async def get_account(authorization: str = Header(None)):
-    token = authorization.split(" ")[1] if authorization else None
-    user_id = verify_token(token)
-
-    if not user_id:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
-
-    return {"user_id": user_id}
-
-
