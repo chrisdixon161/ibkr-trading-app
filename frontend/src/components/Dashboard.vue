@@ -1,7 +1,6 @@
 <template>
 	<div>
 		<h1>Dashboard</h1>
-		{{ user }}
 		<p><strong>Email:</strong> {{ user?.email }}</p>
 		<p><strong>User ID:</strong> {{ user?.id }}</p>
 	</div>

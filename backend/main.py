@@ -53,7 +53,7 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None):
 def verify_token(token: str):
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload.get("sub")
+        return payload
     except JWTError:
         return None
 
@@ -62,6 +62,7 @@ def verify_token(token: str):
 @app.get("/")
 async def root():
     return {"message": "Welcome to the API- CORS configured correctly"}
+
 
 @app.post("/api/login", response_model=Token)
 async def login(data: LoginRequest):
@@ -74,26 +75,22 @@ async def login(data: LoginRequest):
             "password": data.password
         })
 
-        # Log the response structure for debugging
         print(f"Supabase Auth Response: {auth_response}")
 
-        # Check if there is no user in the response
         if not auth_response.user:
             print("Authentication failed: No user returned")
             raise HTTPException(status_code=401, detail="Invalid credentials or user not found")
 
-        # Extract the user and access token from the response
+        # Extract user details
         user = auth_response.user
-        access_token = auth_response.session.access_token
 
-        if not user:
-            print("No user found in the response")
-            raise HTTPException(status_code=401, detail="Invalid user")
+        # Generate a JWT token with both user ID and email
+        generated_token = create_access_token(
+            data={"sub": user.id, "email": user.email},
+            expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        )
 
-        # Generate a JWT token for the user
-        generated_token = create_access_token(data={"sub": user.id}, expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
         print(f"Generated JWT: {generated_token}")
-
         return {"access_token": generated_token, "token_type": "bearer"}
 
     except Exception as e:
@@ -101,6 +98,36 @@ async def login(data: LoginRequest):
         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 
+@app.get("/api/verify-access")
+async def verify_access(authorization: str = Header(None)):
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Unauthorized")
 
+    token = authorization.split(" ")[1]
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
 
+    user_id = payload.get("sub")
+    email = payload.get("email")
+    if not user_id or not email:
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
+    # Debugging logs
+    print(f"Verifying access for user_id: {user_id}, email: {email}")
+
+    # Query the profiles table
+    profile_response = supabase.table("profiles").select("id, plan").eq("id", user_id).single().execute()
+
+    # Debugging logs
+    print(f"Profile response: {profile_response}")
+
+    # Handle cases where plan is NULL (actual NULL or 'NULL' as a string)
+    plan = profile_response.data.get("plan")
+    if not profile_response.data or not plan or plan.upper() == "NULL":
+        print("Access denied: Plan is NULL or profile not found")
+        raise HTTPException(status_code=403, detail="Access denied: No valid plan found")
+
+    print("Access granted")
+    return {"message": "Access granted", "user_id": user_id, "email": email}
 

@@ -19,12 +19,10 @@
 <script setup>
 import { ref } from "vue";
 import axios from "axios";
-import { useRouter } from "vue-router";
 
 const email = ref("");
 const password = ref("");
 const error = ref(null);
-const router = useRouter();
 
 const login = async () => {
 	try {
@@ -35,7 +33,6 @@ const login = async () => {
 
 		const { access_token } = response.data;
 		localStorage.setItem("authToken", access_token);
-		router.push("/dashboard");
 	} catch (err) {
 		// Log and display the error
 		console.error("Login error:", err.response?.data || err);
