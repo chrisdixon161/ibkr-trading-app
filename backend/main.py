@@ -182,3 +182,58 @@ async def get_ibkr_account_data():
     except Exception as e:
         print(f"Error retrieving IBKR account data: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve account data")
+
+
+@app.post("/api/ibkr/place-option-trade")
+async def place_option_trade(data: OptionTradeRequest):
+    try:
+        # Check if the function is hit
+        print("Received request to place an option trade")
+
+        # Create the option contract (updated expiry format)
+        option_contract = Option(
+            symbol=data.symbol,
+            lastTradeDateOrContractMonth=data.expiry.replace("-", ""),  # Format: 'YYYYMMDD'
+            strike=data.strike,
+            right=data.right,
+            exchange="SMART"
+        )
+
+        # Log the contract parameters
+        print(f"Contract params: symbol={option_contract.symbol}, expiry={option_contract.lastTradeDateOrContractMonth}, strike={option_contract.strike}, right={option_contract.right}")
+
+        # Verify the contract exists
+        print(f"Verifying contract for symbol: {option_contract.symbol}")
+        try:
+            ib.qualifyContracts(option_contract)
+            print("Contract qualified successfully")
+        except Exception as e:
+            print(f"Error qualifying contract: {e}")
+            raise HTTPException(status_code=400, detail=f"Error qualifying contract: {e}")
+
+        # Log the option contract details
+        print(f"Option Contract: Symbol={option_contract.symbol}, Expiry={option_contract.lastTradeDateOrContractMonth}, Strike={option_contract.strike}, Right={option_contract.right}, Exchange={option_contract.exchange}")
+
+        # Create the order
+        if data.order_type.upper() == "MKT":
+            order = MarketOrder(data.action.upper(), data.quantity)
+        elif data.order_type.upper() == "LMT":
+            if data.limit_price is None:
+                raise HTTPException(status_code=400, detail="Limit price is required for limit orders")
+            order = LimitOrder(data.action.upper(), data.quantity, data.limit_price)
+        else:
+            raise HTTPException(status_code=400, detail="Invalid order type")
+
+        # Log the order details after it's created
+        print(f"Order: Action={order.action}, Quantity={order.totalQuantity}, Price={order.lmtPrice if isinstance(order, LimitOrder) else 'N/A'}")
+
+        # Place the order
+        print("Placing order...")
+        trade = ib.placeOrder(option_contract, order)
+        print(f"Trade placed: {trade}")
+
+        return {"status": "Order placed", "trade_status": trade.orderStatus.status}
+
+    except Exception as e:
+        print(f"Error placing option trade: {e}")
+        raise HTTPException(status_code=500, detail="Failed to place option trade")

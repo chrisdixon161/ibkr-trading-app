@@ -23,6 +23,97 @@
 				</div>
 			</div>
 		</div>
+
+		<!-- Section to place an options trade -->
+		<div class="card">
+			{{ error }}
+			<h2 class="text-xl font-semibold mb-2">Place Options Trade</h2>
+			<form @submit.prevent="placeTrade">
+				<div class="grid grid-cols-2 gap-4">
+					<div>
+						<label class="block font-medium">Symbol</label>
+						<input
+							v-model="tradeData.symbol"
+							type="text"
+							class="input"
+							placeholder="e.g., AAPL"
+							required
+						/>
+					</div>
+					<div>
+						<label class="block font-medium">Expiry Date</label>
+						<input
+							v-model="tradeData.expiry"
+							type="date"
+							class="input"
+							required
+						/>
+					</div>
+					<div>
+						<label class="block font-medium">Strike Price</label>
+						<input
+							v-model.number="tradeData.strike"
+							type="number"
+							step="0.01"
+							class="input"
+							placeholder="e.g., 150"
+							required
+						/>
+					</div>
+					<div>
+						<label class="block font-medium">Right</label>
+						<select v-model="tradeData.right" class="input" required>
+							<option value="C">Call</option>
+							<option value="P">Put</option>
+						</select>
+					</div>
+					<div>
+						<label class="block font-medium">Quantity</label>
+						<input
+							v-model.number="tradeData.quantity"
+							type="number"
+							class="input"
+							placeholder="e.g., 1"
+							required
+						/>
+					</div>
+					<div>
+						<label class="block font-medium">Action</label>
+						<select v-model="tradeData.action" class="input" required>
+							<option value="BUY">Buy</option>
+							<option value="SELL">Sell</option>
+						</select>
+					</div>
+					<div>
+						<label class="block font-medium">Order Type</label>
+						<select v-model="tradeData.order_type" class="input" required>
+							<option value="MKT">Market</option>
+							<option value="LMT">Limit</option>
+						</select>
+					</div>
+					<div v-if="tradeData.order_type === 'LMT'">
+						<label class="block font-medium">Limit Price</label>
+						<input
+							v-model.number="tradeData.limit_price"
+							type="number"
+							step="0.01"
+							class="input"
+							placeholder="e.g., 145"
+						/>
+					</div>
+				</div>
+				<button
+					type="submit"
+					class="btn bg-green-500 text-white hover:bg-green-600 mt-4"
+				>
+					Place Trade
+				</button>
+			</form>
+			<div v-if="tradeResponse" class="mt-4">
+				<h3 class="font-semibold">Trade Response:</h3>
+				<pre>{{ tradeResponse }}</pre>
+			</div>
+		</div>
 	</div>
 </template>
 
@@ -32,7 +123,7 @@ import axios from "axios";
 
 const accountData = ref(null);
 const tradeData = ref({
-	symbol: "",
+	symbol: "SPY",
 	expiry: "",
 	strike: null,
 	right: "C", // Default to Call
@@ -64,6 +155,9 @@ const placeTrade = async () => {
 			"http://127.0.0.1:8000/api/ibkr/place-option-trade",
 			tradeData.value
 		);
+		console.log(tradeData.value);
+		console.log(response.data);
+
 		tradeResponse.value = response.data;
 		error.value = null;
 	} catch (err) {
