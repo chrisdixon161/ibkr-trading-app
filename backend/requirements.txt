@@ -4,3 +4,7 @@ python-jose
 pydantic
 supabase
 python-dotenv
+ib_insync
+jose
+asyncio
+nest_asyncio
