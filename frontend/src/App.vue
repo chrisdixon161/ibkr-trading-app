@@ -3,9 +3,9 @@
 		<header>
 			<div class="wrapper">
 				<p>error: {{ error || "none" }}</p>
-				<p>authenticated: {{ isAuthenticated }}</p>
+				<p>Subscribed to plan: {{ isSubscribed }}</p>
 				<hr />
-				<Dashboard v-if="isAuthenticated" :user="user" />
+				<Dashboard v-if="isSubscribed" :user="user" />
 				<Login v-else />
 			</div>
 		</header>
@@ -18,7 +18,7 @@ import axios from "axios";
 import Dashboard from "./components/Dashboard.vue";
 import Login from "./components/Login.vue";
 
-const isAuthenticated = ref(false);
+const isSubscribed = ref(false);
 const user = ref(null);
 const error = ref(null);
 
@@ -31,20 +31,20 @@ onMounted(async () => {
 			const decodedToken = decodeToken(token);
 			user.value = decodedToken;
 
-			// Verify user access
+			// Verify user has an active plan
 			await axios.get("http://127.0.0.1:8000/api/verify-access", {
 				headers: { Authorization: `Bearer ${token}` },
 			});
 
-			// If access is verified, set isAuthenticated to true
-			isAuthenticated.value = true;
+			// If access is verified, set isSubscribed to true
+			isSubscribed.value = true;
 		} else {
-			isAuthenticated.value = false;
+			isSubscribed.value = false;
 		}
 	} catch (err) {
 		console.error("Access verification failed:", err.response?.data || err);
 		localStorage.removeItem("authToken"); // Remove token if verification fails
-		isAuthenticated.value = false; // Set isAuthenticated to false on error
+		isSubscribed.value = false; // Set isSubscribed to false on error
 		error.value =
 			err.response?.data?.detail || "Access denied or session expired.";
 	}
