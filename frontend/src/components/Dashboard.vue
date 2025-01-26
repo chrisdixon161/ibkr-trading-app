@@ -2,31 +2,28 @@
 	<div class="dashboard">
 		<h1 class="text-2xl font-bold mb-4">IBKR Dashboard</h1>
 
-		<!-- Section to display errors -->
 		<p v-if="error" class="text-red-500">Error: {{ error }}</p>
 
-		<!-- Section to retrieve IBKR account data -->
+		<!-- retrieve IBKR account data -->
 		<div class="card mb-6">
-			<h2 class="text-xl font-semibold mb-2">Retrieve Account Data</h2>
-			<button
-				@click="fetchAccountData"
-				class="btn bg-blue-500 text-white hover:bg-blue-600"
-			>
-				Get Account Data
-			</button>
+			<h2 class="text-xl font-semibold mb-2">Account Summary</h2>
+			<p><strong>Current Account: </strong>{{ currentAccount }}</p>
 			<div v-if="accountData" class="mt-4">
-				<h3 class="font-semibold">Account Summary:</h3>
 				<div v-for="(item, index) in accountData" :key="index">
-					<p v-if="item.tag === 'TotalCashBalance' && item.currency === 'BASE'">
-						<strong>Total Cash Balance: </strong>{{ item.value }}
+					<p
+						v-if="
+							item.tag === 'FullAvailableFunds' &&
+							item.account === currentAccount
+						"
+					>
+						<strong>Balance: </strong>{{ item.value }} {{ item.currency }}
 					</p>
 				</div>
 			</div>
 		</div>
 
-		<!-- Section to place an options trade -->
+		<!-- place an options trade -->
 		<div class="card">
-			{{ error }}
 			<h2 class="text-xl font-semibold mb-2">Place Options Trade</h2>
 			<form @submit.prevent="placeTrade">
 				<div class="grid grid-cols-2 gap-4">
@@ -118,10 +115,12 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
+import { ref, onMounted, watch } from "vue";
 import axios from "axios";
 
 const accountData = ref(null);
+const currentAccount = ref("");
+const selectedFunds = ref("");
 const tradeData = ref({
 	symbol: "SPY",
 	expiry: "",
@@ -135,12 +134,27 @@ const tradeData = ref({
 const tradeResponse = ref(null);
 const error = ref(null);
 
+// Fetch account data and the current account automatically on component load
 const fetchAccountData = async () => {
 	try {
-		const response = await axios.get(
+		// Fetch all account data
+		const accountResponse = await axios.get(
 			"http://127.0.0.1:8000/api/ibkr/account-data"
 		);
-		accountData.value = response.data.account_data;
+		accountData.value = accountResponse.data.account_data;
+
+		// Fetch the current account
+		const currentAccountResponse = await axios.get(
+			"http://127.0.0.1:8000/api/ibkr/current-account"
+		);
+		currentAccount.value = currentAccountResponse.data.current_account;
+
+		// Find funds for the current account
+		const account = accountData.value.find(
+			(item) => item.account === currentAccount.value
+		);
+		selectedFunds.value = account?.value || "Not Available";
+
 		error.value = null;
 	} catch (err) {
 		console.error("Error fetching account data:", err);
@@ -149,15 +163,24 @@ const fetchAccountData = async () => {
 	}
 };
 
+// Automatically fetch data when the component is mounted
+onMounted(fetchAccountData);
+
+// Watch for changes in the `currentAccount` and update funds dynamically
+watch(currentAccount, () => {
+	const account = accountData.value?.find(
+		(item) => item.account === currentAccount.value
+	);
+	selectedFunds.value = account?.value || "Not Available";
+});
+
+// Place trade function
 const placeTrade = async () => {
 	try {
 		const response = await axios.post(
 			"http://127.0.0.1:8000/api/ibkr/place-option-trade",
 			tradeData.value
 		);
-		console.log(tradeData.value);
-		console.log(response.data);
-
 		tradeResponse.value = response.data;
 		error.value = null;
 	} catch (err) {

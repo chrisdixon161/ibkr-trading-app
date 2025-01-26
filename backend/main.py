@@ -165,6 +165,10 @@ async def verify_access(authorization: str = Header(None)):
 
     return {"message": "Access granted", "user_id": user_id, "email": email}
 
+@app.get("/api/ibkr/current-account")
+def get_current_account():
+    account = ib.managedAccounts()[0]  # Fetch the first (default) account
+    return {"current_account": account}
 
 @app.get("/api/ibkr/account-data")
 async def get_ibkr_account_data():
